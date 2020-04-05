@@ -41,7 +41,7 @@ def loadCSVFile(data):
                            item["id"]})
 
     #print("-- CSV Created --")
-
+a
 
 def getInfoStructureDOM(url, fecha):
     url_final = url + fecha
