@@ -56,34 +56,44 @@ def getInfoStructureDOM(url, fecha):
         soup = BeautifulSoup(src, 'lxml')
         datos = {}
 
-        datos["fecha"] = soup.time.text
-        datos["autor_critica"] = soup.find(
-            "a", {"class": "byline__name-link"}).text
+        fecha = soup.time.text
+        au_critica = soup.find("a", {"class": "byline__name-link"}).text
+
+        datos["fecha"] = fecha if len(fecha) > 0 else ''
+        datos["autor_critica"] = au_critica if len(au_critica) > 0 else ''
 
         name_datos = soup.h1.text.split('“')
 
-        datos["autor_portada"] = name_datos[0].strip()
-        datos["nombre_portada"] = name_datos[1].split('”')[0].strip()
+        datos["autor_portada"] = name_datos[0].strip() if len(
+            name_datos[0].strip()) > 0 else ''
+        datos["nombre_portada"] = name_datos[1].split('”')[0].strip() if len(
+            name_datos[1].split('”')[0].strip()) > 0 else ''
 
         current_url = soup.find("meta", property="og:url")
-        datos['url'] = current_url["content"]
+        datos['url'] = current_url["content"] if len(
+            current_url["content"]) > 0 else ''
 
         image = soup.find("meta", property="og:image")
-        datos["image-16-9"] = image["content"]
+        datos["image-16-9"] = image["content"] if len(
+            image["content"]) > 0 else ''
 
         meta_tags = soup.find_all('meta')
         for meta in meta_tags:
             if meta.get('name') == 'news_keywords':
-                datos['news_keywords'] = meta.get('content')
+                datos['news_keywords'] = meta.get('content') if len(
+                    meta.get('content')) > 0 else ''
 
             if meta.get('name') == 'keywords':
-                datos['keywords'] = meta.get('content')
+                datos['keywords'] = meta.get('content') if len(
+                    meta.get('content')) > 0 else ''
 
             if meta.get('name') == 'description':
-                datos['descripcion'] = meta.get('content')
+                datos['descripcion'] = meta.get('content') if len(
+                    meta.get('content')) > 0 else ''
 
             if meta.get('name') == 'id':
-                datos['id'] = meta.get('content')
+                datos['id'] = meta.get('content') if len(
+                    meta.get('content')) > 0 else ''
 
         print(datos['url'] + "-- DONE --")
         return datos
