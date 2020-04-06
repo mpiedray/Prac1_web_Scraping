@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import csv
+import pandas as pd
+import time
 from datetime import datetime, date, timedelta
 
 headers = {
@@ -21,26 +23,10 @@ headers1 = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.2704.103 Safari/537.36'}
 
 
-def loadCSVFile(data):
-    data = json.loads(data)
-    csv_file = csv.writer(
-        open("new_yorker.csv", "w", newline='', encoding='utf-8'))
-    # fieldnames = ["fecha", "autor_critica", "autor_portada", "nombre_portada",
-    #               "url", "url_imagen", "news_keywords", "keywords", "descripcion", "id"]
-
-    for item in data:
-        csv_file.writerow({item["fecha"],
-                           item["autor_critica"],
-                           item["autor_portada"],
-                           item["nombre_portada"],
-                           item["url"],
-                           item["image-16-9"],
-                           item["news_keywords"],
-                           item["keywords"],
-                           item["descripcion"],
-                           item["id"]})
-
-    #print("-- CSV Created --")
+def createDataFrame(data):
+    df = pd.DataFrame(data, columns=["fecha", "autor_critica", "autor_portada", "nombre_portada",
+                                     "url", "url_imagen", "news_keywords", "keywords", "descripcion", "id"])
+    df.to_csv(r'new_yorker.csv', index=False)
 
 
 def getInfoStructureDOM(url, fecha):
@@ -56,10 +42,14 @@ def getInfoStructureDOM(url, fecha):
         soup = BeautifulSoup(src, 'lxml')
         datos = {}
 
-        fecha = soup.time.text
+        fecha = soup.time.text.split(",")[0] + soup.time.text.split(",")[1]
+        # cambiamos la forma de mostrar la fecha
+        conv = time.strptime(fecha, "%B %d %Y")
+        fecha_cambiada = time.strftime("%Y-%m-%d", conv)
+
         au_critica = soup.find("a", {"class": "byline__name-link"}).text
 
-        datos["fecha"] = fecha if len(fecha) > 0 else ''
+        datos["fecha"] = fecha_cambiada if len(fecha_cambiada) > 0 else ''
         datos["autor_critica"] = au_critica if len(au_critica) > 0 else ''
 
         name_datos = soup.h1.text.split('“')
@@ -125,7 +115,9 @@ def createDate():
             result.append(salida)
 
     # print(result)
-    loadCSVFile(json.dumps(result))
+    createDataFrame(result)
+    # loadCSVFile(json.dumps(result))
+    # loadCSVFile2(result)
     #print(json.dumps(result, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
