@@ -35,57 +35,163 @@ from datetime import datetime, date, timedelta
 #     print("La opcion seleccionada no es correcta, por favor vuelva a intentarlo.")
 
 
-def formatingDate(user_date):
-    user_date = str(user_date).strip()
-    if user_date.strip() == "":
-        sdate = date(2007, 1, 1)   # start date
-        edate = date.today()   # end date
+# def formatingDate(user_date):
+#     fechas = []
+#     user_date = str(user_date).strip()
+#     sdate = ''
+#     edate = ''
+#     try:
+#         if user_date.strip() == "":
+#             sdate = date(2007, 1, 1)   # start date
+#             edate = date.today()   # end date
+#         elif user_date.find(":") >= 0 or len(user_date) == 4:
+#             if len(user_date) > 4:
+#                 if user_date.find(":") >= 0:
+#                     if user_date.find("-") >= 0:
+#                         inicio = user_date.split(":")[0]
+#                         final = user_date.split(":")[1]
 
-    elif user_date.find(":") >= 0 or len(user_date) == 4:
-        if len(user_date) > 4:
-            if user_date.find(":") >= 0:
-                if user_date.find("-") >= 0:
-                    try:
-                        inicio = user_date.split(":")[0]
-                        final = user_date.split(":")[1]
+#                         sdate = date(
+#                             int(inicio.split("-")[1]), int(inicio.split("-")[0]), 1)
+#                         edate = date(
+#                             int(final.split("-")[1]), int(final.split("-")[0]), 1)
+#                         # TODO COMPROBAR QUE SDATE ES MENOR QUE EDATE
+#                     else:
+#                         mydate = user_date.split(":")
+#                         if mydate[0] < mydate[1]:
+#                             sdate = date(int(mydate[0]), 1, 1)
+#                             edate = date(int(mydate[1]), 12, 31)
+#                         else:
+#                             sdate = date(int(mydate[1]), 1, 1)
+#                             edate = date(int(mydate[0]), 12, 31)
+#             if len(user_date) == 4:
+#                 user_date = int(user_date)
+#                 sdate = date(user_date, 1, 1)   # start date
+#                 edate = date.today()   # end date
+#         elif user_date.find("-") >= 0 and len(user_date) > 4:
+#             myMonday = user_date.split("-")
+#             sdate = date(int(myMonday[0]), int(myMonday[1]), int(myMonday[2]))
+#         else:
+#             print("Formato no valido")
+#     except IndexError:
+#         print("Se han introducido mal los valores de la fecha")
+#         sdate = ''
+#         edate = ''
+#     except ValueError:
+#         print("Los valores proporcionados no son válidos")
+#         sdate = ''
+#         edate = ''
+#     except:
+#         print("Un Error inesperado ha ocurrido")
+#         sdate = ''
+#         edate = ''
 
-                        sdate = date(
-                            int(inicio.split("-")[1]), int(inicio.split("-")[0]), 1)
-                        edate = date(
-                            int(final.split("-")[1]), int(final.split("-")[0]), 1)
-                        # TODO COMPROBAR QUE SDATE ES MENOR QUE EDATE
-                    except IndexError:
-                        print("Se han introducido mal los valores de la fecha")
-                    except:
-                        print("Un Error inesperado ha ocurrido")
-                else:
-                    try:
-                        sdate = date(int(user_date.split(":")[0]), 1, 1)
-                        edate = date(int(user_date.split(":")[1]), 12, 31)
-                    except ValueError:
-                        print("Los valores proporcionados no son válidos")
-                    except:
-                        print("Un Error inesperado ha ocurrido")
+#     # es la misma fecha
+#     if edate != '':
+#         if edate < sdate:
+#             item = sdate
+#             sdate = edate
+#             edate = item
 
-        if len(user_date) == 4:
-            try:
-                user_date = int(user_date)
-                sdate = date(user_date, 1, 1)   # start date
-                edate = date.today()   # end date
-            except ValueError:
-                print("Los valores proporcionados no son válidos")
-            except:
-                print("Un Error inesperado ha ocurrido")
-    elif user_date.find("-") >= 0 and len(user_date) > 4:
-        try:
-            myMonday = user_date.split("-")
-            sdate = date(int(myMonday[0]), int(myMonday[1]), int(myMonday[2]))
-            edate = ''
-        except IndexError:
-            print("Se han introducido mal los valores de la fecha al introducir un lunes")
-        except:
-            print("Un Error inesperado ha ocurrido")
+#     fechas.append(sdate)
+#     fechas.append(edate)
+
+#     print(fechas)
 
 
-este = "2017-13"
-formatingDate(este)
+# este = "2016-03-15"
+# formatingDate(este)
+
+
+def getInfoStructureDOM(url, fecha):
+    url_final = url + fecha
+    print(url_final)
+    result = requests.get(url_final, headers=headers1)
+    print(result.status_code)
+
+    if result.status_code != 200:
+        url_final = url + "cover-story-" + fecha
+        result = requests.get(url_final, headers=headers1)
+
+    if result.status_code == 200:
+        src = result.content
+        soup = BeautifulSoup(src, 'lxml')
+        datos = {}
+
+        fecha = soup.time.text.split(",")[0] + soup.time.text.split(",")[1]
+        # cambiamos la forma de mostrar la fecha
+        conv = time.strptime(fecha, "%B %d %Y")
+        fecha_cambiada = time.strftime("%Y-%m-%d", conv)
+
+        au_critica = soup.find("a", {"class": "byline__name-link"}).text
+
+        datos["fecha"] = fecha_cambiada if len(fecha_cambiada) > 0 else ''
+        datos["autor_critica"] = au_critica if len(au_critica) > 0 else ''
+
+        name_datos = soup.h1.text.split('“')
+
+        datos["autor_portada"] = name_datos[0].strip() if len(
+            name_datos[0].strip()) > 0 else ''
+        datos["nombre_portada"] = name_datos[1].split('”')[0].strip() if len(
+            name_datos[1].split('”')[0].strip()) > 0 else ''
+
+        current_url = soup.find("meta", property="og:url")
+        datos['url'] = current_url["content"] if len(
+            current_url["content"]) > 0 else ''
+
+        image = soup.find("meta", property="og:image")
+        datos["image-16-9"] = image["content"] if len(
+            image["content"]) > 0 else ''
+
+        meta_tags = soup.find_all('meta')
+        for meta in meta_tags:
+            if meta.get('name') == 'news_keywords':
+                datos['news_keywords'] = meta.get('content') if len(
+                    meta.get('content')) > 0 else ''
+
+            if meta.get('name') == 'keywords':
+                datos['keywords'] = meta.get('content') if len(
+                    meta.get('content')) > 0 else ''
+
+            if meta.get('name') == 'description':
+                datos['descripcion'] = meta.get('content') if len(
+                    meta.get('content')) > 0 else ''
+
+            if meta.get('name') == 'id':
+                datos['id'] = meta.get('content') if len(
+                    meta.get('content')) > 0 else ''
+
+        print(datos['url'] + "-- DONE --")
+        return datos
+
+
+def createDate(fechas):
+    result = []
+    url_base = "https://www.newyorker.com/culture/cover-story/"
+    print("aqui1")
+    if fechas[1] != '':
+        sdate = fechas[0]
+        edate = fechas[1]
+
+        sdate += timedelta(days=1 - sdate.isoweekday())
+
+        while sdate <= edate:
+            current_monday = sdate.strftime("%Y-%m-%d")
+            sdate += timedelta(days=7)
+            print("aqui")
+            salida = getInfoStructureDOM(url_base, current_monday)
+            if salida is not None:
+                result.append(salida)
+    else:
+
+        current_monday = fechas[0].strftime("%Y-%m-%d")
+        salida = getInfoStructureDOM(url_base, current_monday)
+        if salida is not None:
+            result.append(salida)
+
+    # print(result)
+    createDataFrame(result)
+
+
+fechas = [datetime.date(2018, 1, 1), datetime.date(2018, 12, 31)]
+createDate(fechas)

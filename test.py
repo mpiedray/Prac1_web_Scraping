@@ -6,20 +6,8 @@ import pandas as pd
 import time
 from datetime import datetime, date, timedelta
 
-headers = {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,\
-    */*;q=0.8",
-    "Accept-Encoding": "gzip, deflate, sdch, br",
-    "Accept-Language": "en-US,en;q=0.8",
-    "Cache-Control": "no-cache",
-    "dnt": "1",
-    "Pragma": "no-cache",
-    "Upgrade-Insecure-Requests": "1",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/5\
-    37.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
-}
 
-headers1 = {
+headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.2704.103 Safari/537.36'}
 
 
@@ -30,12 +18,13 @@ def createDataFrame(data):
 
 
 def getInfoStructureDOM(url, fecha):
+    print("-- leyendo datos --" + url)
     url_final = url + fecha
-    result = requests.get(url_final, headers=headers1)
+    result = requests.get(url_final, headers=headers)
 
     if result.status_code != 200:
         url_final = url + "cover-story-" + fecha
-        result = requests.get(url_final, headers=headers1)
+        result = requests.get(url_final, headers=headers)
 
     if result.status_code == 200:
         src = result.content
@@ -89,22 +78,26 @@ def getInfoStructureDOM(url, fecha):
         return datos
 
 
-def createDate():
+def createDate(fechas):
     result = []
+    url_base = "https://www.newyorker.com/culture/cover-story/"
+    if fechas[1] != '':
+        sdate = fechas[0]
+        edate = fechas[1]
 
-    # sdate = date(2007, 1, 1)   # start date
-    # edate = date.today()   # end date
+        sdate += timedelta(days=1 - sdate.isoweekday())
 
-    # datos de prueb solo el ano 2018
-    sdate = date(2018, 1, 1)
-    edate = date(2019, 1, 1)
+        while sdate <= edate:
+            current_monday = sdate.strftime("%Y-%m-%d")
+            sdate += timedelta(days=7)
 
-    sdate += timedelta(days=1 - sdate.isoweekday())
+            salida = getInfoStructureDOM(url_base, current_monday)
+            if salida is not None:
+                result.append(salida)
+    else:
 
-    while sdate <= edate:
-        current_monday = sdate.strftime("%Y-%m-%d")
-        sdate += timedelta(days=7)
-        url_base = "https://www.newyorker.com/culture/cover-story/"
+        current_monday = fechas[0].strftime("%Y-%m-%d")
+        print(current_monday)
         salida = getInfoStructureDOM(url_base, current_monday)
         if salida is not None:
             result.append(salida)
@@ -115,16 +108,18 @@ def createDate():
 
 
 def formatingDate(user_date):
+    fechas = []
     user_date = str(user_date).strip()
-    if user_date.strip() == "":
-        sdate = date(2007, 1, 1)   # start date
-        edate = date.today()   # end date
-
-    elif user_date.find(":") >= 0 or len(user_date) == 4:
-        if len(user_date) > 4:
-            if user_date.find(":") >= 0:
-                if user_date.find("-") >= 0:
-                    try:
+    sdate = ''
+    edate = ''
+    try:
+        if user_date.strip() == "":
+            sdate = date(2007, 1, 1)   # start date
+            edate = date.today()   # end date
+        elif user_date.find(":") >= 0 or len(user_date) == 4:
+            if len(user_date) > 4:
+                if user_date.find(":") >= 0:
+                    if user_date.find("-") >= 0:
                         inicio = user_date.split(":")[0]
                         final = user_date.split(":")[1]
 
@@ -133,42 +128,51 @@ def formatingDate(user_date):
                         edate = date(
                             int(final.split("-")[1]), int(final.split("-")[0]), 1)
                         # TODO COMPROBAR QUE SDATE ES MENOR QUE EDATE
-                    except IndexError:
-                        print("Se han introducido mal los valores de la fecha")
-                    except:
-                        print("Un Error inesperado ha ocurrido")
-                else:
-                    try:
-                        sdate = date(int(user_date.split(":")[0]), 1, 1)
-                        edate = date(int(user_date.split(":")[1]), 12, 31)
-                    except ValueError:
-                        print("Los valores proporcionados no son válidos")
-                    except:
-                        print("Un Error inesperado ha ocurrido")
-
-        if len(user_date) == 4:
-            try:
+                    else:
+                        mydate = user_date.split(":")
+                        if mydate[0] < mydate[1]:
+                            sdate = date(int(mydate[0]), 1, 1)
+                            edate = date(int(mydate[1]), 12, 31)
+                        else:
+                            sdate = date(int(mydate[1]), 1, 1)
+                            edate = date(int(mydate[0]), 12, 31)
+            if len(user_date) == 4:
                 user_date = int(user_date)
                 sdate = date(user_date, 1, 1)   # start date
                 edate = date.today()   # end date
-            except ValueError:
-                print("Los valores proporcionados no son válidos")
-            except:
-                print("Un Error inesperado ha ocurrido")
-    elif user_date.find("-") >= 0 and len(user_date) > 4:
-        try:
+        elif user_date.find("-") >= 0 and len(user_date) > 4:
             myMonday = user_date.split("-")
             sdate = date(int(myMonday[0]), int(myMonday[1]), int(myMonday[2]))
-            edate = ''
-        except IndexError:
-            print("Se han introducido mal los valores de la fecha al introducir un lunes")
-        except:
-            print("Un Error inesperado ha ocurrido")
+        else:
+            print("Formato no valido")
+    except IndexError:
+        print("Se han introducido mal los valores de la fecha")
+        sdate = ''
+        edate = ''
+    except ValueError:
+        print("Los valores proporcionados no son válidos")
+        sdate = ''
+        edate = ''
+    except:
+        print("Un Error inesperado ha ocurrido")
+        sdate = ''
+        edate = ''
+
+    # es la misma fecha
+    if edate != '':
+        if edate < sdate:
+            item = sdate
+            sdate = edate
+            edate = item
+
+    fechas.append(sdate)
+    fechas.append(edate)
+    createDate(fechas)
 
 
 def initialProgram():
     opc = input(
-        "Bienvenido a la practica 1 de Tipología y ciclo de vida de los dato, \n Debe saber que esta práctica extrae informacion del magazine New Yorker \n" +
+        "Bienvenido a la practica 1 de Tipología y ciclo de vida de los dato, \nDebe saber que esta práctica extrae informacion del magazine New Yorker \n" +
         "Esta revista publica todos los lunes de mes, así que  si desea in dia en concreto debe ser un Lunes, para que la busqueda devuelva datos. \n" +
         "El formato de entrada que esperamos es una fecha, con el siguiente formato Año-mes-dia, o solo el Año según la opción.  \n" +
         "En esta practica dispones de varias opciones para extraer los datos \n" +
@@ -198,7 +202,7 @@ def initialProgram():
         monday = input(
             "Ejemplo de entrada de datos: \n" +
             "Un Lunes concreto, en el siguiente formato Año-mes-dia \n")
-        createDate(monday)
+        formatingDate(monday)
     elif opc == "4":
         print("Ha elegido la opción 4, Salir del programa, Hasta pronto!... ")
     else:
@@ -210,3 +214,30 @@ initialProgram()
 #url_base = "https://www.newyorker.com/culture/cover-story/cover-story-"
 # url = "https://www.newyorker.com/culture/cover-story/cover-story-2018-10-08"
 #getInfoStructureDOM(url_base, '2018-10-08')
+
+
+# 3 julio 2017 https://www.newyorker.com/culture/cover-story/kadir-nelsons-bright-star
+# https://www.newyorker.com/culture/culture-desk/cover-story-2016-07-11
+# https://www.newyorker.com/culture/culture-desk/cover-story-2016-06-27
+# https://www.newyorker.com/culture/culture-desk/cover-story-2016-06-27
+# https://www.newyorker.com/culture/cover-story/cover-story-2019-02-04
+# https://www.newyorker.com/culture/cover-story/cover-story-2019-08-5
+
+
+# def drug_data():
+#     url = 'https://www.newyorker.com/culture/cover-story'
+
+#     while url:
+#         print(url)
+#         r = requests.get(url, headers=headers1)
+#         soup = BeautifulSoup(r.text, "lxml")
+#         url = soup.findAll('a', {'class': 'Link__link___3dWao', 'rel': 'next'})
+#         print(url)
+#         if url:
+#             url = 'https://www.newyorker.com/' + \
+#                 url[0].get('href')
+#         else:
+#             break
+
+
+# drug_data()
