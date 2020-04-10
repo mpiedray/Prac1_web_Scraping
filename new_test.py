@@ -13,14 +13,61 @@ headers = {
 
 
 def createDataFrame(data, name_csv):
-    df = pd.DataFrame(data, columns=["fecha", "autor_critica", "autor_portada", "titulo_portada",
+    df = pd.DataFrame(data, columns=["fecha", "autor_portada", "nombre portada", "autor_critica", "nombre_critica"
                                      "url", "url_imagen", "news_keywords", "keywords", "descripcion", "id"])
     # with open(name_csv + '.json', 'w') as f:
     #     json.dump(data, f, ensure_ascii=False)
     df.to_csv(name_csv + '.csv', index=False, encoding='utf-8')
 
 
-# def TakeInfo(url):
+def TakeInfo(url):
+    result_info = requests.get(url, headers=headers)
+    if result_info.status_code == 200:
+        src_info = result_info.content
+        soup_info = BeautifulSoup(src_info, 'lxml')
+        more_info = {}
+        autores_critica = ''
+
+        if len(soup_info.findAll("a", {"class": "byline__name-link"})) > 0:
+            ac = soup_info.findAll("a", {"class": "byline__name-link"})
+            for item in ac:
+                au_critica = autores_critica + item.text
+
+        more_info['autor_critica'] = au_critica
+
+        if len(soup_info.h1) > 0:
+            nombre_critica_completo = soup_info.h1.text
+            texto_buscar = 'Cover Story:'
+            if texto_buscar in nombre_critica_completo:
+                nombre_critica = nombre_critica_completo.split(':')[1]
+
+        more_info['nombre_critica'] = nombre_critica
+
+        meta_tags = soup_info.find_all('meta')
+        if len(meta_tags) > 0:
+            for meta in meta_tags:
+                if meta.get('name') == 'news_keywords':
+                    more_info['news_keywords'] = meta.get('content') if len(
+                        meta.get('content')) > 0 else 'missing'
+
+                if meta.get('name') == 'keywords':
+                    more_info['keywords'] = meta.get('content') if len(
+                        meta.get('content')) > 0 else 'missing'
+
+                if meta.get('name') == 'description':
+                    more_info['descripcion'] = meta.get('content') if len(
+                        meta.get('content')) > 0 else 'missing'
+
+                if meta.get('name') == 'id':
+                    more_info['id'] = meta.get('content') if len(
+                        meta.get('content')) > 0 else 'missing'
+        else:
+            more_info['news_keywords'] = 'missing'
+            more_info['keywords'] = 'missing'
+            damore_infotos['descripcion'] = 'missing'
+            more_info['id'] = 'missing'
+
+    return more_info
 
 
 def getInfoStructureDOM(url, fecha):
@@ -37,8 +84,12 @@ def getInfoStructureDOM(url, fecha):
         if link is not None:
             if len(soup.find("span", {"class": "ImageCaption__caption___1EOQO ImageCaption__caption___1EOQO"}).findAll("a")) > 0:
                 print('nuevo')
-                fecha_entrada = soup.find("div", {"class": "MagazineHeader__header___2wMTg"}).find(
-                    "h2", recursive=False)
+                fe = soup.find(
+                    "div", {"class": "MagazineHeader__header___2wMTg"}).findAll("h2")
+                if len(fe) == 2:
+                    fecha_entrada = fe[1].text
+                else:
+                    fecha_entrada = fe[0].text
 
                 nombre = soup.find("span", {"class": "ImageCaption__caption___1EOQO ImageCaption__caption___1EOQO"}).find(
                     "p", recursive=False)
@@ -51,36 +102,75 @@ def getInfoStructureDOM(url, fecha):
                     enlace['href']) > 0 else 'missing'
 
                 datos['url'] = current_url
-                if fecha_entrada is not None:
-                    datos['fecha'] = fecha_entrada.text if len(
-                        fecha_entrada.text) > 0 else 'missing'
+                if fe is not None:
+
+                    fecha_entrada = fecha_entrada if len(
+                        fecha_entrada) > 0 else 'missing'
+
+                    parte1 = fecha_entrada.split(',')[0].strip()
+                    parte2 = fecha_entrada.split(',')[1].strip()
+                    fecha_entrada = parte1 + parte2
+
+                    datos['fecha'] = fecha_entrada
 
                 if nombre is not None:
-                    datos['autor_critica'] = nombre.text if len(
-                        nombre.text) > 0 else 'missing'
+                    datos_persona = nombre.text
+                    np = datos_persona.split('by')[0].strip()
+                    ap = datos_persona.split('by')[1].strip()
+
+                    datos['autor_portada'] = ap if len(
+                        ap) > 0 else 'missing'
+
+                    datos['titulo_portada'] = np if len(
+                        np) > 0 else 'missing'
 
                 if image is not None:
                     datos['url_imagen'] = image['src'] if len(
                         image['src']) > 0 else 'missing'
 
-                # if current_url > 0
-                #     obj = TakeInfo(current_url)
+                if current_url != 'missing':
+                    obj = TakeInfo(current_url)
+
+                    datos['autor_critica'] = obj['autor_critica']
+                    datos['nombre_critica'] = obj['nombre_critica']
+                    datos['news_keywords'] = obj['news_keywords']
+                    datos['keywords'] = obj['keywords']
+                    datos['descripcion'] = obj['descripcion']
+                    datos['id'] = obj['id']
             else:
                 print('viejo')
-                fecha_entrada = soup.find("div", {"class": "MagazineHeader__header___2wMTg"}).find(
-                    "h2", recursive=False)
+                fe = soup.find(
+                    "div", {"class": "MagazineHeader__header___2wMTg"}).findAll("h2")
+                if len(fe) == 2:
+                    fe = fe[1].text
+                else:
+                    fe = fe[0].text
+
+                parte1 = fe.split(',')[0].strip()
+                parte2 = fe.split(',')[1].strip()
+                fecha_entrada = parte1 + parte2
 
                 nombre = soup.find("span", {"class": "ImageCaption__caption___1EOQO ImageCaption__caption___1EOQO"}).find(
                     "p", recursive=False)
                 image = soup.find("picture", {
                                   "class": "component-responsive-image"}).find("img", recursive=False)
-                if fecha_entrada is not None:
-                    datos['fecha'] = fecha_entrada.text if len(
-                        fecha_entrada.text) > 0 else 'missing'
+
+                if fe is not None:
+                    fecha_entrada = fecha_entrada if len(
+                        fecha_entrada) > 0 else 'missing'
+
+                datos['fecha'] = fecha_entrada
 
                 if nombre is not None:
-                    datos['autor_critica'] = nombre.text if len(
-                        nombre.text) > 0 else 'missing'
+                    datos_persona = nombre.text
+                    np = datos_persona.split('by')[0].strip()
+                    ap = datos_persona.split('by')[1].strip()
+
+                    datos['autor_portada'] = ap if len(
+                        ap) > 0 else 'missing'
+
+                    datos['titulo_portada'] = np if len(
+                        np) > 0 else 'missing'
 
                 if image is not None:
                     datos['url_imagen'] = image['src'] if len(
@@ -94,14 +184,26 @@ def getInfoStructureDOM(url, fecha):
                 datos['id'] = 'missing'
         else:
             print('No tengo nombre')
-            fecha_entrada = soup.find("div", {"class": "MagazineHeader__header___2wMTg"}).find(
-                "h2", recursive=False)
+            fe = soup.find(
+                "div", {"class": "MagazineHeader__header___2wMTg"}).findAll("h2")
+            if len(fe) == 2:
+                fecha_entrada = fe[1].text
+            else:
+                fecha_entrada = fe[0].text
 
             image = soup.find("picture", {
                               "class": "component-responsive-image"}).find("img", recursive=False)
-            if fecha_entrada is not None:
-                datos['fecha'] = fecha_entrada.text if len(
-                    fecha_entrada.text) > 0 else 'missing'
+
+            if fe is not None:
+                fecha_entrada = fecha_entrada if len(
+                    fecha_entrada) > 0 else 'missing'
+
+                parte1 = fecha_entrada.split(',')[0].strip()
+                parte2 = fecha_entrada.split(',')[1].strip()
+                fecha_entrada = parte1 + parte2
+
+                datos['fecha'] = fecha_entrada
+
             datos['autor_critica'] = 'missing'
 
             if image is not None:
@@ -178,7 +280,7 @@ def createDate():
     # datos de prueb solo el ano 2018
     # sdate = date(2008, 1, 1)
     sdate = date(2011, 1, 1)
-    edate = date(2011, 12, 31)
+    edate = date(2011, 9, 30)
 
     sdate += timedelta(days=1 - sdate.isoweekday())
 
@@ -194,29 +296,9 @@ def createDate():
 
     print(result)
     name_csv = str(sdate.year) + '_' + str(edate.year) + '_' + 'newYorker'
-    print(name_csv)
     createDataFrame(result, name_csv)
     # print(json.dumps(result, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
 # initial_code
 createDate()
-
-
-# def drug_data():
-#     url = 'https://www.newyorker.com/culture/cover-story'
-
-#     while url:
-#         print(url)
-#         r = requests.get(url, headers=headers1)
-#         soup = BeautifulSoup(r.text, "lxml")
-#         url = soup.findAll('a', {'class': 'Link__link___3dWao', 'rel': 'next'})
-#         print(url)
-#         if url:
-#             url = 'https://www.newyorker.com/' + \
-#                 url[0].get('href')
-#         else:
-#             break
-
-
-# drug_data()
