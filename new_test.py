@@ -13,7 +13,7 @@ headers = {
 
 
 def createDataFrame(data, name_csv):
-    df = pd.DataFrame(data, columns=["fecha", "autor_portada", "nombre portada", "autor_critica", "nombre_critica"
+    df = pd.DataFrame(data, columns=["fecha", "titulo_portada", "nombre portada", "autor_critica", "nombre_critica"
                                      "url", "url_imagen", "news_keywords", "keywords", "descripcion", "id"])
     # with open(name_csv + '.json', 'w') as f:
     #     json.dump(data, f, ensure_ascii=False)
