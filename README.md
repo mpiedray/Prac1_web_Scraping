@@ -1,7 +1,7 @@
 # Prac1_web_Scraping
 
-# 7.- Inspiración. Explique por qué es interesante este conjunto de datos y qué preguntas se pretenden responder.
-# Objetivo y la importancia de este análisis.
+### 7.- Inspiración. Explique por qué es interesante este conjunto de datos y qué preguntas se pretenden responder.
+#### Objetivo y la importancia de este análisis.
 
 En nuestro caso creemos que la importancia de este análisis radica en lo que se conoce como humanidades digitales, que es aquella disciplina científica que captura, analiza  y presenta las dinámicas culturales y sociales pasadas, presentes  y emergentes mediante  herramientas informáticas y  el cálculo.
 
@@ -23,7 +23,7 @@ https://books.google.com/books?id=yf5YDwAAQBAJ&pg=PT65&lpg=PT65&dq=ejemplo+the+s
 http://humanidadesdigitales.net/blog/2011/09/27/que-son-la-humanidades-digitales/
 
 
-# 8.- Licencia. Seleccione una de estas licencias para su dataset y explique el
+### 8.- Licencia. Seleccione una de estas licencias para su dataset y explique el
 motivo de su selección:
 
 Los datos masivos recopilados a través de diferentes métodos y herramientas tecnológicas, dan lugar a nuevas actividades mediante las
